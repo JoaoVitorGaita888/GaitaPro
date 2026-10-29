@@ -3,330 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaita Cifras Pro - Análise de Acordeon</title>
+    <title>Gaita Cifras Pro — Análise Prática para Acordeon</title>
+    <!-- Tailwind CSS CDN para estilização rápida e responsiva -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .piano-key-white { background: linear-gradient(to bottom, #ffffff 0%, #f3f4f6 100%); }
-        .piano-key-black { background: linear-gradient(to bottom, #1f2937 0%, #111827 100%); }
-        .bass-button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-amber-500 selection:text-slate-950">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
 
-<div id="root"></div>
-
-<script type="text/babel">
-const { useState, useEffect, useMemo } = React;
-
-// Dicionário de notas e registros de acordeon
-const ACCORDEON_REGISTERS = [
-    { id: 'master', name: 'Master', desc: 'Todas as vozes ativas. Som cheio e encorpado.', icon: 'volume-2' },
-    { id: 'musette', name: 'Musette', desc: 'Vozes clarinete com desafinação caraterística.', icon: 'music' },
-    { id: 'bandoneon', name: 'Bandoneon', desc: 'Voz grave (Bassoon) + Voz média (Clarinet).', icon: 'layers' },
-    { id: 'violin', name: 'Violino', desc: 'Duas vozes médias vibradas.', icon: 'disc' },
-    { id: 'bassoon', name: 'Clarão / Bassoon', desc: 'Som grave encorpado de uma oitava abaixo.', icon: 'minus' },
-    { id: 'accordion', name: 'Accordion', desc: 'Grave + Clarinete + Tremolo.', icon: 'radio' }
-];
-
-// Helper para validar URL do YouTube
-function parseYouTubeUrl(url) {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-}
-
-function App() {
-    const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [videoId, setVideoId] = useState(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [analysisProgress, setAnalysisProgress] = useState(0);
-    const [analysisStage, setAnalysisStage] = useState('');
-    const [analysisError, setAnalysisError] = useState(null);
-    const [library, setLibrary] = useState([]);
-    const [currentSong, setCurrentSong] = useState(null);
-    const [activeTab, setActiveTab] = useState('chords');
-    
-    // Configurações do instrumento do usuário
-    const [userAccordion, setUserAccordion] = useState({
-        basses: 120,
-        registers: ['master', 'musette', 'bandoneon', 'violin', 'bassoon']
-    });
-
-    // Validar entrada do YouTube
-    const handleUrlChange = (e) => {
-        const val = e.target.value;
-        setYoutubeUrl(val);
-        setAnalysisError(null);
-    };
-
-    // Iniciar processo de análise
-    const startAnalysis = () => {
-        setAnalysisError(null);
-        const id = parseYouTubeUrl(youtubeUrl);
-        
-        if (!id) {
-            setAnalysisError('Por favor, insira um link válido do YouTube (ex: https://www.youtube.com/watch?v=...).');
-            return;
-        }
-
-        setVideoId(id);
-        setIsAnalyzing(true);
-        setAnalysisProgress(10);
-        setAnalysisStage('Verificando disponibilidade do áudio no YouTube...');
-
-        // Simulação do pipeline real de análise do servidor com comunicação transparente
-        setTimeout(() => {
-            setAnalysisProgress(35);
-            setAnalysisStage('Conectando ao serviço de extração de áudio e espectrograma...');
-        }, 1200);
-
-        setTimeout(() => {
-            setAnalysisProgress(65);
-            setAnalysisStage('Detectando Pitch, Chroma, tonalidade e mudanças de acordes...');
-        }, 2800);
-
-        setTimeout(() => {
-            setAnalysisProgress(88);
-            setAnalysisStage('Mapeando posições para teclado e baixaria Stradella de acordeon...');
-        }, 4200);
-
-        setTimeout(() => {
-            // Nota: Conforme as regras absolutas, sem backend ativado neste ambiente local,
-            // informamos honestamente que a análise precisa da API conectada.
-            setIsAnalyzing(false);
-            setAnalysisProgress(100);
-            setAnalysisError('Módulo de análise de áudio em tempo real (yt-dlp / Essentia ML Engine) requer servidor ativo. Para testar a interface de gaiteiro, selecione uma estrutura ou conecte a API.');
-        }, 5500);
-    };
-
-    return (
-        <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-            {/* Header / Navbar */}
-            <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-amber-500/20">
-                            🎹
-                        </div>
-                        <div>
-                            <h1 className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-amber-400 via-orange-300 to-amber-200 bg-clip-text text-transparent">
-                                GAITA CIFRAS PRO
-                            </h1>
-                            <p className="text-xs text-slate-400 font-medium">Análise e Acompanhamento Prático de Acordeon</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700/60">
-                            Acervo Salvo: {library.length} músicas
-                        </span>
-                    </div>
+    <!-- Cabeçalho Principal -->
+    <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center font-bold text-slate-950 text-2xl shadow-lg shadow-amber-500/20">
+                    🪗
                 </div>
-            </header>
-
-            {/* Conteúdo Principal */}
-            <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-8">
-                
-                {/* Seção de Entrada do Link do YouTube */}
-                <section className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                    
-                    <div className="max-w-3xl mx-auto text-center space-y-4">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                            ✨ Transcrição Harmonizada para Acordeonistas
-                        </span>
-                        <h2 className="text-2xl md:text-3xl font-bold text-slate-100">
-                            Descubra a Cifra e o Acompanhamento Completo
-                        </h2>
-                        <p className="text-sm text-slate-400 leading-relaxed">
-                            Cole o link de um vídeo do YouTube. O sistema analisará o áudio e criará um guia completo com baixaria, baixos, posições de teclado, ritmo e sugestões de fraseado.
-                        </p>
-
-                        {/* Form de Busca */}
-                        <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                            <div className="relative flex-1">
-                                <input
-                                    type="text"
-                                    value={youtubeUrl}
-                                    onChange={handleUrlChange}
-                                    placeholder="Cole aqui o link do vídeo do YouTube (ex: https://www.youtube.com/watch?v=...)"
-                                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-3.5 pl-11 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
-                                />
-                                <span className="absolute left-4 top-4 text-slate-500 text-base">🔗</span>
-                            </div>
-                            <button
-                                onClick={startAnalysis}
-                                disabled={isAnalyzing || !youtubeUrl.trim()}
-                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 whitespace-nowrap"
-                            >
-                                {isAnalyzing ? 'Analisando...' : 'Analisar Música'}
-                            </button>
-                        </div>
-
-                        {/* Barra de Progresso Real da Análise */}
-                        {isAnalyzing && (
-                            <div className="mt-6 bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-left space-y-3">
-                                <div className="flex justify-between text-xs font-medium">
-                                    <span className="text-amber-400 animate-pulse">{analysisStage}</span>
-                                    <span className="text-slate-400">{analysisProgress}%</span>
-                                </div>
-                                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                                    <div 
-                                        className="bg-gradient-to-r from-amber-500 to-orange-500 h-full transition-all duration-300 ease-out"
-                                        style={{ width: `${analysisProgress}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Notificações de Status / Mensagens Informativas */}
-                        {analysisError && (
-                            <div className="mt-4 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl p-4 text-left text-xs space-y-2">
-                                <div className="flex items-center gap-2 font-semibold">
-                                    <span>⚠️</span> Status do Processador Musical:
-                                </div>
-                                <p className="text-slate-300 leading-relaxed">{analysisError}</p>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-                {/* Estado Inicial: Biblioteca Vazia */}
-                {!currentSong && (
-                    <section className="bg-slate-900/40 border border-slate-800/80 border-dashed rounded-2xl p-12 text-center space-y-4">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-slate-800/60 flex items-center justify-center text-3xl">
-                            🪗
-                        </div>
-                        <div className="max-w-md mx-auto space-y-2">
-                            <h3 className="text-lg font-bold text-slate-200">Nenhuma música analisada ainda</h3>
-                            <p className="text-xs text-slate-400 leading-relaxed">
-                                O Gaita Cifras Pro começa completamente limpo. Nenhuma cifra genérica ou música de teste é carregada previamente. Cole um vídeo acima para realizar a primeira análise real.
-                            </p>
-                        </div>
-                    </section>
-                )}
-
-                {/* Dashboard do Resultado da Análise (Quando houver dados salvos/analisados) */}
-                {currentSong && (
-                    <div className="space-y-6">
-                        {/* Banner da Música */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div>
-                                <span className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
-                                    Análise Confirmada • Tom Original: {currentSong.key || 'Não identificado com segurança'}
-                                </span>
-                                <h2 className="text-2xl font-bold text-slate-100">{currentSong.title}</h2>
-                                <p className="text-xs text-slate-400">{currentSong.channel} • BPM: {currentSong.bpm || 'Indeterminado'}</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg transition border border-slate-700">
-                                    💾 Salvar na Biblioteca
-                                </button>
-                                <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg transition border border-slate-700">
-                                    🔄 Atualizar Análise
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Navegação de Abas do Gaiteiro */}
-                        <div className="flex border-b border-slate-800 gap-2 overflow-x-auto">
-                            {[
-                                { id: 'chords', label: 'Cifra & Marcações' },
-                                { id: 'right_hand', label: 'Mão Direita (Teclado)' },
-                                { id: 'left_hand', label: 'Mão Esquerda (Baixaria)' },
-                                { id: 'phrasing', label: 'Fraseados & Grooves' },
-                                { id: 'registers', label: 'Registros Recomendados' }
-                            ].map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`px-4 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition ${
-                                        activeTab === tab.id
-                                            ? 'border-amber-500 text-amber-400'
-                                            : 'border-transparent text-slate-400 hover:text-slate-200'
-                                    }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Conteúdo das Abas */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                            {activeTab === 'right_hand' && (
-                                <div className="space-y-6">
-                                    <h3 className="text-base font-bold text-slate-200">Visualizador de Teclas da Mão Direita</h3>
-                                    <p className="text-xs text-slate-400">
-                                        Selecione os acordes da música para visualizar as inversões e digitações recomendadas no teclado do acordeon.
-                                    </p>
-                                    
-                                    {/* Componente Teclado de Acordeon Interativo */}
-                                    <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 flex justify-center overflow-x-auto">
-                                        <div className="relative flex h-40 select-none">
-                                            {/* Representação visual simplificada de 2 oitavas do teclado */}
-                                            {['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2', 'D2', 'E2', 'F2', 'G2'].map((note, idx) => (
-                                                <div 
-                                                    key={note}
-                                                    className="piano-key-white w-10 h-full border border-slate-300 rounded-b-md flex items-end justify-center pb-2 text-[10px] font-bold text-slate-800 relative"
-                                                >
-                                                    {note}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'left_hand' && (
-                                <div className="space-y-6">
-                                    <h3 className="text-base font-bold text-slate-200">Mapeamento dos Baixos (Sistema Stradella 120)</h3>
-                                    <p className="text-xs text-slate-400">
-                                        O diagrama destaca os botões de baixo fundamental, baixo auxiliar e acordes maiores/menores/sétimas sugeridos.
-                                    </p>
-                                    <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 text-center text-xs text-slate-500">
-                                        Selecione uma parte da música para destacar a sequência da baixaria.
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'registers' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {ACCORDEON_REGISTERS.map(reg => (
-                                        <div key={reg.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-bold text-sm text-amber-400">{reg.name}</span>
-                                                <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Vozes</span>
-                                            </div>
-                                            <p className="text-xs text-slate-400">{reg.desc}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-            </main>
-
-            {/* Rodapé */}
-            <footer className="border-t border-slate-800/80 bg-slate-950 py-6 mt-auto">
-                <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 space-y-1">
-                    <p>Gaita Cifras Pro — Ferramenta Prática de Transcrição e Acompanhamento para Acordeonistas.</p>
-                    <p>Respeito rigoroso a direitos autorais e termos do YouTube.</p>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-amber-400 via-orange-300 to-amber-200 bg-clip-text text-transparent">
+                        GAITA CIFRAS PRO
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Orientação Prática e Transcrição para Acordeonistas</p>
                 </div>
-            </footer>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="btn-library-toggle" class="text-xs font-semibold px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-2">
+                    📚 Biblioteca Local (<span id="library-count">0</span>)
+                </button>
+            </div>
         </div>
-    );
-}
+    </header>
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-8">
+
+        <!-- Seção de Entrada do Link do YouTube -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div class="max-w-3xl mx-auto text-center space-y-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    ✨ Análise Real de Músicas
+                </span>
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-100">
+                    Insira o Vídeo para Iniciar a Análise Musical
+                </h2>
+                <p class="text-xs md:text-sm text-slate-400 leading-relaxed">
+                    Cole o link do YouTube da música que deseja aprender. O sistema validará a fonte do áudio e processará as notas, baixos e registros para acordeon.
+                </p>
+
+                <!-- Campo de Entrada -->
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <input
+                            type="text"
+                            id="youtube-url-input"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3.5 pl-10 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                        />
+                        <span class="absolute left-3.5 top-3.5 text-slate-500 text-sm">🔗</span>
+                    </div>
+                    <button
+                        id="btn-analyze"
+                        class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                        Analisar Música
+                    </button>
+                </div>
+
+                <!-- Painel de Status / Erro / Transparência -->
+                <div id="status-panel" class="hidden mt-4 text-left text-xs rounded-xl p-4 border transition-all"></div>
+            </div>
+        </section>
+
+        <!-- Seção Alternativa Legítima: Upload de Áudio do Usuário -->
+        <section class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="space-y-1 text-center sm:text-left">
+                <h3 class="text-sm font-bold text-slate-200">Possui o arquivo de áudio no seu computador/celular?</h3>
+                <p class="text-xs text-slate-400">Você também pode enviar um arquivo local (MP3 ou WAV) do seu ensaio ou gravação de autorização própria para análise direta.</p>
+            </div>
+            <div>
+                <label for="audio-file-input" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700 transition inline-block">
+                    📁 Selecionar Áudio Local
+                </label>
+                <input type="file" id="audio-file-input" accept="audio/*" class="hidden" />
+            </div>
+        </section>
+
+        <!-- Estado Inicial: Biblioteca Vazia -->
+        <section id="empty-state-section" class="bg-slate-900/30 border border-slate-800 border-dashed rounded-2xl p-10 text-center space-y-4">
+            <div class="w-16 h-16 mx-auto rounded-full bg-slate-800/50 flex items-center justify-center text-3xl">
+                🪗
+            </div>
+            <div class="max-w-md mx-auto space-y-2">
+                <h3 class="text-lg font-bold text-slate-200">Nenhuma música cadastrada no acervo</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    O Gaita Cifras Pro cumpre rigorosamente a regra de não inventar cifras ou carregar músicas fictícias. Cole o link do vídeo do YouTube acima para processar sua primeira análise.
+                </p>
+            </div>
+        </section>
+
+        <!-- Modal / Painel da Biblioteca Salva -->
+        <section id="library-section" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-lg font-bold text-slate-200">Sua Biblioteca de Análises</h3>
+                <button id="btn-close-library" class="text-xs text-slate-400 hover:text-slate-200">Fechar ✖</button>
+            </div>
+            <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Músicas salvas serão injetadas aqui dinamicamente pelo app.js -->
+            </div>
+        </section>
+
+        <!-- Painel de Exibição dos Resultados da Análise -->
+        <section id="result-dashboard" class="hidden space-y-6">
+            <!-- Cabeçalho do Resultado -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span id="analysis-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider">
+                        Status: Processado
+                    </span>
+                    <h2 id="song-title" class="text-2xl font-bold text-slate-100 mt-2">Música Selecionada</h2>
+                    <p id="song-metadata" class="text-xs text-slate-400 mt-1">Fonte: YouTube • ID: ---</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-save-analysis" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow transition">
+                        💾 Salvar na Biblioteca
+                    </button>
+                    <button id="btn-delete-analysis" class="px-4 py-2 bg-slate-800 hover:bg-red-900/50 text-red-400 font-semibold text-xs rounded-xl border border-slate-700 transition">
+                        🗑️ Excluir
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navegação de Abas do Gaiteiro -->
+            <div class="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1">
+                <button class="tab-btn active" data-tab="chords">Cifra & Seções</button>
+                <button class="tab-btn" data-tab="right-hand">Mão Direita (Teclado)</button>
+                <button class="tab-btn" data-tab="left-hand">Mão Esquerda (Baixaria)</button>
+                <button class="tab-btn" data-tab="phrasing">Fraseados & Ritmo</button>
+                <button class="tab-btn" data-tab="registers">Registros de Voz</button>
+            </div>
+
+            <!-- Conteúdo das Abas -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <!-- Aba 1: Cifra -->
+                <div id="tab-chords" class="tab-content space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-base font-bold text-slate-200">Estrutura e Harmonia Identificada</h3>
+                        <span id="confidence-level" class="text-xs text-amber-400 font-medium">Nível de Confiança: Alto</span>
+                    </div>
+                    <div id="chords-container" class="space-y-4 text-sm text-slate-300">
+                        <!-- Conteúdo da Cifra -->
+                    </div>
+                </div>
+
+                <!-- Aba 2: Mão Direita -->
+                <div id="tab-right-hand" class="tab-content hidden space-y-6">
+                    <h3 class="text-base font-bold text-slate-200">Diagrama da Mão Direita (Teclado do Acordeon)</h3>
+                    <p class="text-xs text-slate-400">Pressione as teclas destacadas para formar o acorde no teclado:</p>
+                    <div id="keyboard-visualizer" class="bg-slate-950 p-6 rounded-xl border border-slate-800 flex justify-center overflow-x-auto">
+                        <!-- Teclado SVG/HTML dinâmico montado via app.js -->
+                    </div>
+                </div>
+
+                <!-- Aba 3: Mão Esquerda -->
+                <div id="tab-left-hand" class="tab-content hidden space-y-6">
+                    <h3 class="text-base font-bold text-slate-200">Sistema Stradella (120 Baixos)</h3>
+                    <p class="text-xs text-slate-400">Botões destacados para acompanhamento da mão esquerda:</p>
+                    <div id="bass-visualizer" class="bg-slate-950 p-6 rounded-xl border border-slate-800 overflow-x-auto text-center">
+                        <!-- Mapa de Baixos injetado via app.js -->
+                    </div>
+                </div>
+
+                <!-- Aba 4: Fraseados -->
+                <div id="tab-phrasing" class="tab-content hidden space-y-4">
+                    <h3 class="text-base font-bold text-slate-200">Sugestões de Fraseados e Passagens</h3>
+                    <div id="phrasing-container" class="space-y-3"></div>
+                </div>
+
+                <!-- Aba 5: Registros -->
+                <div id="tab-registers" class="tab-content hidden space-y-4">
+                    <h3 class="text-base font-bold text-slate-200">Registros de Voz Recomendados</h3>
+                    <div id="registers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 space-y-1">
+            <p>Gaita Cifras Pro — Ferramenta Prática de Orientação e Transcrição para Acordeonistas.</p>
+            <p>Sem músicas ou cifras inventadas ficticiamente. Respeito rigoroso aos direitos autorais.</p>
+        </div>
+    </footer>
+
+    <!-- Script Principal -->
+    <script src="app.js"></script>
 </body>
 </html>
